@@ -10,15 +10,24 @@ import cv2
 augment   = Augment_RGB_torch()
 transforms_aug = [method for method in dir(augment) if callable(getattr(augment, method)) if not method.startswith('_')] 
 
+def _resolve_shadow_dirs(rgb_dir, val=False, plus=False):
+    if os.path.isdir(os.path.join(rgb_dir, 'train_A')):
+        gt_dir = 'test_C_fixed_official' if val and plus else 'train_C'
+        return gt_dir, 'train_A', 'train_B'
+    if os.path.isdir(os.path.join(rgb_dir, 'shadow_imgs')):
+        return 'shadowfree_imgs', 'shadow_imgs', 'shadow_masks'
+    raise FileNotFoundError(
+        "Expected either train_A/train_B/train_C or "
+        "shadow_imgs/shadow_masks/shadowfree_imgs under {}".format(rgb_dir)
+    )
+
 ##################################################################################################
 class DataLoaderTrain(Dataset):
     def __init__(self, rgb_dir, img_options=None, target_transform=None, plus=False):
         super(DataLoaderTrain, self).__init__()
 
         self.target_transform = target_transform
-        gt_dir = 'train_C'
-        input_dir = 'train_A'
-        mask_dir = 'train_B'
+        gt_dir, input_dir, mask_dir = _resolve_shadow_dirs(rgb_dir)
         
         clean_files = sorted(os.listdir(os.path.join(rgb_dir, gt_dir)))
         noisy_files = sorted(os.listdir(os.path.join(rgb_dir, input_dir)))
@@ -77,12 +86,7 @@ class DataLoaderVal(Dataset):
         super(DataLoaderVal, self).__init__()
 
         self.target_transform = target_transform
-        if plus:
-            gt_dir = 'test_C_fixed_official'
-        else:
-            gt_dir = 'train_C'
-        input_dir = 'train_A'
-        mask_dir = 'train_B'
+        gt_dir, input_dir, mask_dir = _resolve_shadow_dirs(rgb_dir, val=True, plus=plus)
         
         clean_files = sorted(os.listdir(os.path.join(rgb_dir, gt_dir)))
         noisy_files = sorted(os.listdir(os.path.join(rgb_dir, input_dir)))

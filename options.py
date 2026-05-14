@@ -51,5 +51,9 @@ class Options():
         parser.add_argument('--val_dir', type=str, default ='/gdata2/xiaojie/Dataset/ISTD_Dataset/test',  help='dir of train data')
         parser.add_argument('--warmup', action='store_true', default=True, help='warmup')
         parser.add_argument('--warmup_epochs', type=int, default=5, help='epochs for warmup')
+        parser.add_argument('--eval_every', type=int, default=1000, help='validation interval in iterations')
+        parser.add_argument('--eval_max_images', type=int, default=64, help='maximum validation images per evaluation; 0 evaluates all')
+        parser.add_argument('--eval_tile', type=int, default=384, help='tile size for validation inference')
+        parser.add_argument('--eval_tile_overlap', type=int, default=30, help='tile overlap for validation inference')
 
         return parser

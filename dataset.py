@@ -21,6 +21,19 @@ def _resolve_shadow_dirs(rgb_dir, val=False, plus=False):
         "shadow_imgs/shadow_masks/shadowfree_imgs under {}".format(rgb_dir)
     )
 
+def _pad_to_patch(clean, noisy, mask, patch_size):
+    _, h, w = clean.shape
+    pad_h = max(patch_size - h, 0)
+    pad_w = max(patch_size - w, 0)
+    if pad_h == 0 and pad_w == 0:
+        return clean, noisy, mask
+
+    pad = (0, pad_w, 0, pad_h)
+    clean = F.pad(clean, pad, mode='reflect')
+    noisy = F.pad(noisy, pad, mode='reflect')
+    mask = F.pad(mask.unsqueeze(0), pad, mode='reflect').squeeze(0)
+    return clean, noisy, mask
+
 ##################################################################################################
 class DataLoaderTrain(Dataset):
     def __init__(self, rgb_dir, img_options=None, target_transform=None, plus=False):
@@ -60,14 +73,11 @@ class DataLoaderTrain(Dataset):
 
         #Crop Input and Target
         ps = self.img_options['patch_size']
+        clean, noisy, mask = _pad_to_patch(clean, noisy, mask, ps)
         H = clean.shape[1]
         W = clean.shape[2]
-        if H-ps==0:
-            r=0
-            c=0
-        else:
-            r = np.random.randint(0, H - ps)
-            c = np.random.randint(0, W - ps)
+        r = 0 if H == ps else np.random.randint(0, H - ps + 1)
+        c = 0 if W == ps else np.random.randint(0, W - ps + 1)
         clean = clean[:, r:r + ps, c:c + ps]
         noisy = noisy[:, r:r + ps, c:c + ps]
         mask = mask[r:r + ps, c:c + ps]
